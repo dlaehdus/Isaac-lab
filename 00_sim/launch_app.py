@@ -62,25 +62,44 @@ def design_scene():
     # 위치(translation) (1, 0, 10)에 배치하여 장면 전체를 균일하게 조명.
     
     cfg_cuboid = sim_utils.CuboidCfg(
-    큐보이드(직육면체) 생성 설정 클래스.
-
+    # 큐보이드(직육면체) 생성 설정 클래스.
+    # 이 객체는 큐보이드의 크기, 색상, 물리 속성(있다면) 등을 정의.
         size=[args_cli.size] * 3,
+        # 큐보이드의 X, Y, Z 방향 길이를 동일하게 설정.
+        # args_cli.size는 CLI 인자로 받은 값 . --size 0.5을 터미널 뒤에 입력
+        # [args_cli.size] * 3 → [L, L, L] 형태로 정육면체(cube) 크기가 됨.
+        # 예: --size 1.0 입력 시 → size=[1.0, 1.0, 1.0].
         visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(1.0, 1.0, 1.0)),
+        # 시각적 재질(Visual Material) 설정.
+        # PreviewSurfaceCfg는 간단한 머티리얼 설정용 클래스.
+        # diffuse_color=(1.0, 1.0, 1.0) → RGB (1,1,1) → 흰색 큐보이드로 표시.
     )
     cfg_cuboid.func("/World/Object", cfg_cuboid, translation=(0.0, 0.0, args_cli.size / 2))
-
+    # func는 설정된 CuboidCfg 객체를 실제 USD Stage에 배치하는 메서드.
+    # 지정된 경로와 위치에 큐보이드 프림을 생성.
+    # USD Stage 내 큐보이드의 경로.
+    # 최상위 /World 아래 Object라는 이름으로 프림 생성.
+    # ) translation=(0.0, 0.0, args_cli.size / 2)
+    # 큐보이드의 초기 위치(Translation) 설정.
+    # Z축 위치를 args_cli.size / 2로 설정한 이유:
+    # 큐보이드의 중심이 기본 기준점(origin)에 위치하면 절반이 지면 밑으로 내려감.
+    # 따라서 지면 위에 큐보이드가 놓이도록 절반 높이만큼 위로 올림.
 
 def main():
-
     sim_cfg = sim_utils.SimulationCfg(dt=0.01, device=args_cli.device)
+    # # dt=0.01: 시뮬레이션 타임스텝을 0.01초(=100 Hz)로 설정.
+    # device=args_cli.device: GPU 또는 CPU를 지정. 예: "cuda:0" 또는 "cpu".
     sim = sim_utils.SimulationContext(sim_cfg)
+    # SimulationContext는 시뮬레이션의 전체 실행 환경을 관리하는 핵심 클래스.
+    # 물리 엔진 초기화, 렌더링 파이프라인 설정, 시간 관리 등을 담당.
     sim.set_camera_view([2.0, 0.0, 2.5], [-0.5, 0.0, 0.5])
-
+    # 첫 번째 인자 [2.0, 0.0, 2.5]: 카메라 위치 (x, y, z).
+    # 두 번째 인자 [-0.5, 0.0, 0.5]: 카메라가 바라보는 타겟 위치 (Look-at point).
     design_scene()
-
+    # 앞서 정의한 design_scene() 함수를 호출.
     sim.reset()
+    # 초기상태로 돌림
     print("[INFO]: Setup complete...")
-
     while simulation_app.is_running():
         sim.step()
 

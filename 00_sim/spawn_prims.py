@@ -21,7 +21,6 @@ import isaacsim.core.utils.prims as prim_utils
 # 프림은 USD에서 3D 장면의 기본 구성 요소로, 객체(예: 큐브, 구), 카메라, 조명, 변환 등을 나타냅니다.
 # USD 스테이지에서 프림을 생성, 삭제, 속성 설정/조회, 경로 관리, 관계 설정 등을 처리하는 유틸리티 함수를 제공합니다.
 # **프림(Prim)**은 **USD(Universal Scene Description)**에서 3D 장면을 구성하는 기본 단위입니다. USD는 NVIDIA Omniverse와 Isaac Sim에서 사용되는 오픈소스 포맷으로, 3D 장면의 객체, 속성, 관계 등을 기술합니다.
-
 import isaaclab.sim as sim_utils
 # https://isaac-sim.github.io/IsaacLab/main/source/api/lab/isaaclab.sim.html
 # NVIDIA의 Isaac Lab 프레임워크에서 제공하는 isaaclab.sim 모듈을 가져와 sim_utils라는 별칭으로 사용하는 코드
@@ -31,67 +30,112 @@ from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR
 # NVIDIA의 Isaac Lab 프레임워크에서 제공하는 isaaclab.utils.assets 모듈에서 ISAAC_NUCLEUS_DIR라는 상수를 가져오는 코드
 # 모듈: isaaclab.utils.assets
 # 출처: NVIDIA의 Isaac Lab 프레임워크의 유틸리티 모듈로, 자산(asset) 경로 관리와 관련된 기능을 제공.
-상수: ISAAC_NUCLEUS_DIR
+# 상수: ISAAC_NUCLEUS_DIR
 # 설명: Isaac Sim의 기본 자산이 저장된 디렉토리 경로를 나타내는 문자열 상수.
 # 기본값: Omniverse Nucleus 서버의 경로(예: omniverse://localhost/NVIDIA/Assets/Isaac/4.0) 또는 로컬 경로(예: /home/user/App/isaac/isaac-sim-assets-1-4.0.0/Assets/Isaac/4.0).
 
 def design_scene():
+# 목적: 이 함수는 USD 스테이지에 시뮬레이션 환경을 구성하여 로봇 학습이나 테스트를 위한 장면을 만듭니다. 구성 요소는 다음과 같습니다:
+# 지면(/World/defaultGroundPlane).
+# 원거리 조명(/World/lightDistant).
+# 두 개의 정적 원뿔(/World/Objects/Cone1, /World/Objects/Cone2).
+# 물리적 강체 원뿔(/World/Objects/ConeRigid).
+# 변형 가능한 큐보이드(/World/Objects/CuboidDeformable).
+# 테이블(/World/Objects/Table).
+# 사용 모듈:
+# isaaclab.sim: 스포너 클래스(GroundPlaneCfg, DistantLightCfg, ConeCfg, MeshCuboidCfg, UsdFileCfg)와 유틸리티 함수.
+# isaaclab.utils.assets: ISAAC_NUCLEUS_DIR 상수로 USD 파일 경로 제공.
+# isaacsim.core.utils.prims: 프림 생성 및 속성 설정.
     cfg_ground = sim_utils.GroundPlaneCfg()
+    # 이 클래스는 지면 프림(Ground Plane Primitive)의 속성(크기, 색상 등)을 설정하기 위한 구성 객체(Config Object).
+    # 여기서는 기본값을 사용(size=None, color=None).
     cfg_ground.func("/World/defaultGroundPlane", cfg_ground)
-
-    cfg_light_distant = sim_utils.DistantLightCfg(
+    # GroundPlaneCfg.func 메서드를 호출하여 USD 스테이지 경로 /World/defaultGroundPlane에 지면 프림을 생성.
+    # cfg_ground 객체에 지정된 속성을 이용해 USD 내에 Ground Plane을 추가.
+    cfg_light_distant = sim_utils.DistantLightCfg(\
+    # 원거리 조명(Directional Light) 구성 객체 생성
         intensity=3000.0,
+        # intensity: 광원 강도(lux 단위 비슷한 효과) → 3000.0으로 설정.
         color=(0.75, 0.75, 0.75),
+        # color: RGB 형태의 조명 색상 → 회색빛(0.75, 0.75, 0.75).
     )
     cfg_light_distant.func("/World/lightDistant", cfg_light_distant, translation=(1, 0, 10))
-
+    # func 메서드를 통해 /World/lightDistant 경로에 원거리 조명을 생성.
+    # 위치(translation) (1, 0, 10)에 배치하여 장면 전체를 균일하게 조명.
     prim_utils.create_prim("/World/Objects", "Xform")
+    # 객체 그룹(Objects) 생성
+    # /World/Objects 경로에 Xform 타입의 프림 생성.
+    # 역할: 모든 오브젝트(원뿔, 테이블 등)를 이 Transform 그룹 하위에 배치하여 계층 구조 정리.
     cfg_cone = sim_utils.ConeCfg(
+    # 원뿔(Cone) 형상의 정적(비물리) 객체 설정.
         radius=0.15,
+        # radius: 원뿔의 반지름 0.15 m.
         height=0.5,
+        # height: 원뿔의 높이 0.5 m.
         visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(1.0, 0.0, 0.0)),
+        # visual_material: 시각적 표면 속성. 여기서 diffuse_color=(1.0, 0.0, 0.0) → 빨간색.
     )
     cfg_cone.func("/World/Objects/Cone1", cfg_cone, translation=(-1.0, 1.0, 1.0))
     cfg_cone.func("/World/Objects/Cone2", cfg_cone, translation=(-1.0, -1.0, 1.0))
-
+    # 두 개의 정적 원뿔을 /World/Objects 경로 하위에 각각 Cone1과 Cone2로 생성.
+    # 각각 좌표 (-1, 1, 1) 및 (-1, -1, 1)에 배치.
     cfg_cone_rigid = sim_utils.ConeCfg(
+    # 물리적 강체(Rigid Body) 원뿔 생성
         radius=0.15,
         height=0.5,
         rigid_props=sim_utils.RigidBodyPropertiesCfg(),
+        # rigid_props: 강체(Rigid Body) 활성화 설정.
         mass_props=sim_utils.MassPropertiesCfg(mass=1.0),
+        # mass_props: 질량 1.0 kg 부여.
         collision_props=sim_utils.CollisionPropertiesCfg(),
+        # collision_props: 충돌 속성 활성화.
         visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 1.0, 0.0)),
+        # visual_material: 녹색(diffuse_color=(0,1,0))으로 렌더링.
     )
     cfg_cone_rigid.func(
         "/World/Objects/ConeRigid", cfg_cone_rigid, translation=(-0.2, 0.0, 2.0), orientation=(0.5, 0.0, 0.5, 0.0)
     )
-
+    # /World/Objects/ConeRigid 경로에 강체 원뿔 생성.
+    # 초기 위치 (x=-0.2, y=0.0, z=2.0).
+    # 초기 회전(quaternion): (0.5, 0.0, 0.5, 0.0).
     cfg_cuboid_deformable = sim_utils.MeshCuboidCfg(
+    # 변형 가능한(Deformable) 큐보이드 생성
         size=(0.2, 0.5, 0.2),
+        # size: (X=0.2 m, Y=0.5 m, Z=0.2 m) 크기.
         deformable_props=sim_utils.DeformableBodyPropertiesCfg(),
+        # deformable_props: 변형 물리 활성화.
         visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(0.0, 0.0, 1.0)),
+        # visual_material: 파란색(diffuse_color=(0,0,1)).
         physics_material=sim_utils.DeformableBodyMaterialCfg(),
+        # physics_material: 변형체 물리재질.
     )
     cfg_cuboid_deformable.func("/World/Objects/CuboidDeformable", cfg_cuboid_deformable, translation=(0.15, 0.0, 2.0))
-
+    # /World/Objects/CuboidDeformable 경로에 큐보이드 생성.
+    # 위치 (0.15, 0.0, 2.0)에 배치.
     cfg = sim_utils.UsdFileCfg(usd_path=f"{ISAAC_NUCLEUS_DIR}/Props/Mounts/SeattleLabTable/table_instanceable.usd")
+    # UsdFileCfg를 사용해 외부 USD 파일 기반 객체(테이블) 로드.
+    # ISAAC_NUCLEUS_DIR는 Nucleus 서버의 기본 경로 상수.
     cfg.func("/World/Objects/Table", cfg, translation=(0.0, 0.0, 1.05))
-
+    # /World/Objects/Table 경로에 테이블 배치.
+    # 위치 (0, 0, 1.05)에 생성.
 
 def main():
     sim_cfg = sim_utils.SimulationCfg(dt=0.01, device=args_cli.device)
+    # dt=0.01: 시뮬레이션 타임스텝을 0.01초(=100 Hz)로 설정.
+    # device=args_cli.device: GPU 또는 CPU를 지정. 예: "cuda:0" 또는 "cpu".
     sim = sim_utils.SimulationContext(sim_cfg)
-
+    # SimulationContext는 시뮬레이션의 전체 실행 환경을 관리하는 핵심 클래스.
+    # 물리 엔진 초기화, 렌더링 파이프라인 설정, 시간 관리 등을 담당.
     sim.set_camera_view([2.0, 0.0, 2.5], [-0.5, 0.0, 0.5])
-
+    # 첫 번째 인자 [2.0, 0.0, 2.5]: 카메라 위치 (x, y, z).
+    # 두 번째 인자 [-0.5, 0.0, 0.5]: 카메라가 바라보는 타겟 위치 (Look-at point).
     design_scene()
-
+    # 앞서 정의한 design_scene() 함수를 호출.
     sim.reset()
+    # reset() 메서드는 시뮬레이션 상태를 초기 상태로 되돌립니다.
     print("[INFO]: Setup complete...")
-
     while simulation_app.is_running():
         sim.step()
-
 
 if __name__ == "__main__":
     main()

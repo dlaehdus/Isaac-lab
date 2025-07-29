@@ -240,6 +240,7 @@ def main():=
     # NewRobotsSceneCfg: 이전에 정의한 Jetbot+Dofbot+지면+조명 환경 구성 클래스.
     # args_cli.num_envs: CLI 인자로부터 가져온 환경 개수.
     # num_envs > 1이면 Jetbot/Dofbot을 여러 인스턴스로 복제하여 병렬 환경 생성.
+    # scene_cfg = NewRobotsSceneCfg(num_envs=10, env_spacing=2.0) 이걸 번경하면 됌
     # env_spacing=2.0: 각 환경 간격(거리) 설정.
     # 환경들이 서로 충돌하지 않도록 배치 간격 지정.
     scene = InteractiveScene(scene_cfg)

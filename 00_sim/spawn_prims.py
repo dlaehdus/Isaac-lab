@@ -28,6 +28,12 @@ import isaaclab.sim as sim_utils
 # 이 모듈은 Isaac Sim 기반의 시뮬레이션 환경을 구성하고 관리하기 위한 고수준 기능을 제공하며, 특히 로봇 학습(예: 강화 학습, 모방 학습)과 시뮬레이션 작업을 간소화하는 데 초점을 둡니다.
 from isaaclab.utils.assets import ISAAC_NUCLEUS_DIR
 # https://isaac-sim.github.io/IsaacLab/main/source/api/lab/isaaclab.utils.html#module-isaaclab.utils.assets
+# NVIDIA의 Isaac Lab 프레임워크에서 제공하는 isaaclab.utils.assets 모듈에서 ISAAC_NUCLEUS_DIR라는 상수를 가져오는 코드
+# 모듈: isaaclab.utils.assets
+# 출처: NVIDIA의 Isaac Lab 프레임워크의 유틸리티 모듈로, 자산(asset) 경로 관리와 관련된 기능을 제공.
+상수: ISAAC_NUCLEUS_DIR
+# 설명: Isaac Sim의 기본 자산이 저장된 디렉토리 경로를 나타내는 문자열 상수.
+# 기본값: Omniverse Nucleus 서버의 경로(예: omniverse://localhost/NVIDIA/Assets/Isaac/4.0) 또는 로컬 경로(예: /home/user/App/isaac/isaac-sim-assets-1-4.0.0/Assets/Isaac/4.0).
 
 def design_scene():
     cfg_ground = sim_utils.GroundPlaneCfg()

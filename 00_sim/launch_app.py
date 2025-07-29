@@ -1,96 +1,90 @@
-# Copyright (c) 2022-2025, The Isaac Lab Project Developers (https://github.com/isaac-sim/IsaacLab/blob/main/CONTRIBUTORS.md).
-# All rights reserved.
-#
-# SPDX-License-Identifier: BSD-3-Clause
-
-"""
-This script demonstrates how to run IsaacSim via the AppLauncher
-
-.. code-block:: bash
-
-    # Usage
-    ./isaaclab.sh -p scripts/tutorials/00_sim/launch_app.py
-
-"""
-
-"""Launch Isaac Sim Simulator first."""
-
-
 import argparse
-
+# 터미널에 입력한 명령줄 인수를 처리하는데 사용함
 from isaaclab.app import AppLauncher
+# Isaac sim  애플리케이션을 실행하고 구동하는데 필요함
 
-# create argparser
 parser = argparse.ArgumentParser(description="Tutorial on running IsaacSim via the AppLauncher.")
+# ArgumentParser 객체를 생성함 설명은 description으로 설명함
 parser.add_argument("--size", type=float, default=1.0, help="Side-length of cuboid")
-# SimulationApp arguments https://docs.omniverse.nvidia.com/py/isaacsim/source/isaacsim.simulation_app/docs/index.html?highlight=simulationapp#isaacsim.simulation_app.SimulationApp
-parser.add_argument(
-    "--width", type=int, default=1280, help="Width of the viewport and generated images. Defaults to 1280"
-)
-parser.add_argument(
-    "--height", type=int, default=720, help="Height of the viewport and generated images. Defaults to 720"
-)
-
-# append AppLauncher cli args
+# 큐보이드 크기 인자
+# 옵션명: --size
+# 자료형: float (실수형)
+# 기본값: 1.0
+# 용도: 변형 가능한 큐보이드(또는 특정 오브젝트)의 한 변의 길이 지정.
+# 큐보이드는 6개의 사각형 면을 가진 **직각 평행육면체 각 면은 직사각형이며, 인접한 면은 직각으로 만납니다.
+parser.add_argument("--width", type=int, default=1280, help="Width of the viewport and generated images. Defaults to 1280")
+# **뷰포트(Viewport)**는 그래픽 환경(시뮬레이션, CAD, 게임 엔진 등)에서 3D 장면을 표시하는 화면 영역을 의미합니다.
+# **3D 가상 장면을 2D 화면에 투영하여 표시하는 "시각 창"**입니다.
+# 카메라 시점(Camera View)과 렌더링 해상도를 반영하여 사용자가 시뮬레이션이나 모델을 시각적으로 확인할 수 있도록 합니다.
+# 뷰포트 가로 해상도 인자
+# 옵션명: --width
+# 자료형: int (정수형)
+# 기본값: 1280 (픽셀 단위)
+# 용도: 시뮬레이션 뷰포트(Viewport) 또는 캡처 이미지의 가로 해상도 지정.
+parser.add_argument("--height", type=int, default=720, help="Height of the viewport and generated images. Defaults to 720")
+# 뷰포트 세로 해상도 인자
+# 옵션명: --height
+# 자료형: int (정수형)
+# 기본값: 720 (픽셀 단위)
+# 용도: 뷰포트 및 이미지 캡처의 세로 해상도 지정.
+# 터미널에 다음과 같이 실행하면
+# python sim_env.py --size 0.8 --width 1920 --height 1080
+# 큐보이드 한 변 길이를 0.8m로 하고, 1920×1080 해상도로 시뮬레이션을 실행합니다.
 AppLauncher.add_app_launcher_args(parser)
-# parse the arguments
+# 앞에서 생성된 객체 parser에 isaaclab 명령줄 인수를 추가함
 args_cli = parser.parse_args()
-# launch omniverse app
+# 명령줄 인수를 pytion형식으로 변환함
 app_launcher = AppLauncher(args_cli)
+# isaac sim 애플리케이션의 실행을 설정함
 simulation_app = app_launcher.app
-
-"""Rest everything follows."""
+# isaac sim 애플리케이션의 실행
 
 import isaaclab.sim as sim_utils
-
+# https://isaac-sim.github.io/IsaacLab/main/source/api/lab/isaaclab.sim.html
+# NVIDIA의 Isaac Lab 프레임워크에서 제공하는 isaaclab.sim 모듈을 가져와 sim_utils라는 별칭으로 사용하는 코드
 
 def design_scene():
-    """Designs the scene by spawning ground plane, light, objects and meshes from usd files."""
-    # Ground-plane
     cfg_ground = sim_utils.GroundPlaneCfg()
+    # 이 클래스는 지면 프림(Ground Plane Primitive)의 속성(크기, 색상 등)을 설정하기 위한 구성 객체(Config Object).
+    # 여기서는 기본값을 사용(size=None, color=None).
     cfg_ground.func("/World/defaultGroundPlane", cfg_ground)
-
-    # spawn distant light
+    # GroundPlaneCfg.func 메서드를 호출하여 USD 스테이지 경로 /World/defaultGroundPlane에 지면 프림을 생성.
+    # cfg_ground 객체에 지정된 속성을 이용해 USD 내에 Ground Plane을 추가.
     cfg_light_distant = sim_utils.DistantLightCfg(
+    # 원거리 조명(Directional Light) 구성 객체 생성
         intensity=3000.0,
+        # 밝기
         color=(0.75, 0.75, 0.75),
+        # 색
     )
     cfg_light_distant.func("/World/lightDistant", cfg_light_distant, translation=(1, 0, 10))
-
-    # spawn a cuboid
+    # func 메서드를 통해 /World/lightDistant 경로에 원거리 조명을 생성.
+    # 위치(translation) (1, 0, 10)에 배치하여 장면 전체를 균일하게 조명.
+    
     cfg_cuboid = sim_utils.CuboidCfg(
+    큐보이드(직육면체) 생성 설정 클래스.
+
         size=[args_cli.size] * 3,
         visual_material=sim_utils.PreviewSurfaceCfg(diffuse_color=(1.0, 1.0, 1.0)),
     )
-    # Spawn cuboid, altering translation on the z-axis to scale to its size
     cfg_cuboid.func("/World/Object", cfg_cuboid, translation=(0.0, 0.0, args_cli.size / 2))
 
 
 def main():
-    """Main function."""
 
-    # Initialize the simulation context
     sim_cfg = sim_utils.SimulationCfg(dt=0.01, device=args_cli.device)
     sim = sim_utils.SimulationContext(sim_cfg)
-    # Set main camera
     sim.set_camera_view([2.0, 0.0, 2.5], [-0.5, 0.0, 0.5])
 
-    # Design scene by adding assets to it
     design_scene()
 
-    # Play the simulator
     sim.reset()
-    # Now we are ready!
     print("[INFO]: Setup complete...")
 
-    # Simulate physics
     while simulation_app.is_running():
-        # perform step
         sim.step()
 
 
 if __name__ == "__main__":
-    # run the main function
     main()
-    # close sim app
     simulation_app.close()

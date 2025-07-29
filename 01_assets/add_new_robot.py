@@ -231,13 +231,20 @@ def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
 
 def main():=
     sim_cfg = sim_utils.SimulationCfg(device=args_cli.device)
-    # 시뮬레이션 설정
+    # 시뮬레이션 물리 엔진 및 실행 환경 설정 객체.
     sim = sim_utils.SimulationContext(sim_cfg)
-    # 시뮬레이션 전체 실행
+    # SimulationContext 객체를 생성.
     sim.set_camera_view([3.5, 0.0, 3.2], [0.0, 0.0, 0.5])
     # 시점 정의
     scene_cfg = NewRobotsSceneCfg(args_cli.num_envs, env_spacing=2.0)
+    # NewRobotsSceneCfg: 이전에 정의한 Jetbot+Dofbot+지면+조명 환경 구성 클래스.
+    # args_cli.num_envs: CLI 인자로부터 가져온 환경 개수.
+    # num_envs > 1이면 Jetbot/Dofbot을 여러 인스턴스로 복제하여 병렬 환경 생성.
+    # env_spacing=2.0: 각 환경 간격(거리) 설정.
+    # 환경들이 서로 충돌하지 않도록 배치 간격 지정.
     scene = InteractiveScene(scene_cfg)
+    # SceneCfg 기반으로 실제 USD Stage에 오브젝트(지면, 조명, 로봇) 스폰.
+    # 로봇 상태/액추에이터 관리 및 시뮬레이션 데이터 동기화.
     sim.reset()
     print("[INFO]: Setup complete...")
     run_simulator(sim, scene)

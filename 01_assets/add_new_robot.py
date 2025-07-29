@@ -157,53 +157,77 @@ class NewRobotsSceneCfg(InteractiveSceneCfg):
     # 각 환경에서 Dofbot 로봇이 독립적으로 생성.
 
 def run_simulator(sim: sim_utils.SimulationContext, scene: InteractiveScene):
+# sim: 시뮬레이션 컨텍스트 (SimulationContext) 객체. 물리 엔진 실행을 담당.
+# scene: Jetbot, Dofbot 등 여러 로봇이 배치된 장면 (InteractiveScene) 객체.
     sim_dt = sim.get_physics_dt()
+    # sim_dt: 물리 시뮬레이션의 시간 간격(Δt, time step)을 가져옴.
     sim_time = 0.0
+    # sim_time: 누적 시뮬레이션 시간.
     count = 0
+    # count: 시뮬레이션 루프 횟수 카운터.
 
     while simulation_app.is_running():
+    # 시뮬레이션 앱이 실행 중인 동안 반복. (GUI 창 닫히면 종료됨)
         if count % 500 == 0:
+        # 500프레임마다 Jetbot, Dofbot의 위치/속도/조인트 상태를 초기화.
+        # 에피소드 리셋(Episode Reset) 또는 강화학습 초기화와 같은 개념.
             count = 0
             root_jetbot_state = scene["Jetbot"].data.default_root_state.clone()
+            # Jetbot의 초기 루트 상태(x, y, z, quaternion, lin vel, ang vel)를 복사.
             root_jetbot_state[:, :3] += scene.env_origins
+            # 각 환경의 중심 위치(env_origins)에 따라 위치 오프셋 적용.
             root_dofbot_state = scene["Dofbot"].data.default_root_state.clone()
+            # Dofbot도 동일하게 복제 및 위치 설정.
             root_dofbot_state[:, :3] += scene.env_origins
 
             scene["Jetbot"].write_root_pose_to_sim(root_jetbot_state[:, :7])
+            # pose (위치 + quaternion 회전) 7개 요소 → 시뮬레이터에 적용.
             scene["Jetbot"].write_root_velocity_to_sim(root_jetbot_state[:, 7:])
+            # velocity (선속도, 각속도) → 시뮬레이터에 적용.
             scene["Dofbot"].write_root_pose_to_sim(root_dofbot_state[:, :7])
+            # Dofbot도 동일하게 적용.
             scene["Dofbot"].write_root_velocity_to_sim(root_dofbot_state[:, 7:])
 
             joint_pos, joint_vel = (
+            # 조인트 위치 및 속도를 복사해서 시뮬레이터에 설정.
                 scene["Jetbot"].data.default_joint_pos.clone(),
                 scene["Jetbot"].data.default_joint_vel.clone(),
             )
             scene["Jetbot"].write_joint_state_to_sim(joint_pos, joint_vel)
             joint_pos, joint_vel = (
+            # 조인트 위치 및 속도를 복사해서 시뮬레이터에 설정.
                 scene["Dofbot"].data.default_joint_pos.clone(),
                 scene["Dofbot"].data.default_joint_vel.clone(),
             )
             scene["Dofbot"].write_joint_state_to_sim(joint_pos, joint_vel)
             scene.reset()
+            # 모든 장면 내 시뮬레이션 객체를 리셋. (내부적으로 캐시 재적용 포함)
             print("[INFO]: Resetting Jetbot and Dofbot state...")
-
         if count % 100 < 75:
+        # 100 프레임 단위로 반복되는 제어 패턴 적용:
             action = torch.Tensor([[10.0, 10.0]])
+            # 처음 75프레임 동안 양 바퀴 10 rad/s → 직진.
         else:
             action = torch.Tensor([[5.0, -5.0]])
-
+            # 이후 25프레임은 한쪽 바퀴만 반전 → 회전 동작.
         scene["Jetbot"].set_joint_velocity_target(action)
-
+        # Jetbot에 속도 명령(joint velocity control) 적용.
         wave_action = scene["Dofbot"].data.default_joint_pos
+        # joint1~joint4에 대해 시간에 따라 변하는 사인파 기반 목표 위치 생성.
         wave_action[:, 0:4] = 0.25 * np.sin(2 * np.pi * 0.5 * sim_time)
+        # 0.5 Hz의 주기로 진동, 진폭은 0.25 rad.
         scene["Dofbot"].set_joint_position_target(wave_action)
-
+        # 조인트 위치 제어(Position Control) 명령 적용.
         scene.write_data_to_sim()
+        # 버퍼에 기록된 모든 제어 명령/상태를 시뮬레이터에 반영.
         sim.step()
+        # 1프레임 시뮬레이션 실행.
         sim_time += sim_dt
+        # sim_time: 총 경과 시간 누적.
         count += 1
+        # count: 프레임 카운터 증가.
         scene.update(sim_dt)
-
+        # scene.update(): 내부 센서/관측값 갱신 등 수행.
 
 def main():=
     sim_cfg = sim_utils.SimulationCfg(device=args_cli.device)

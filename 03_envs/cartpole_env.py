@@ -1,16 +1,8 @@
-# Copyright (c) 2022-2025, The Isaac Lab Project Developers (https://github.com/isaac-sim/IsaacLab/blob/main/CONTRIBUTORS.md).
-# All rights reserved.
-#
-# SPDX-License-Identifier: BSD-3-Clause
-
 from __future__ import annotations
-
 import math
 import torch
 from collections.abc import Sequence
-
 from isaaclab_assets.robots.cartpole import CARTPOLE_CFG
-
 import isaaclab.sim as sim_utils
 from isaaclab.assets import Articulation, ArticulationCfg
 from isaaclab.envs import DirectRLEnv, DirectRLEnvCfg
@@ -20,39 +12,26 @@ from isaaclab.sim.spawners.from_files import GroundPlaneCfg, spawn_ground_plane
 from isaaclab.utils import configclass
 from isaaclab.utils.math import sample_uniform
 
-
 @configclass
 class CartpoleEnvCfg(DirectRLEnvCfg):
-    # env
     decimation = 2
     episode_length_s = 5.0
-    action_scale = 100.0  # [N]
+    action_scale = 100.0
     action_space = 1
     observation_space = 4
     state_space = 0
-
-    # simulation
     sim: SimulationCfg = SimulationCfg(dt=1 / 120, render_interval=decimation)
-
-    # robot
     robot_cfg: ArticulationCfg = CARTPOLE_CFG.replace(prim_path="/World/envs/env_.*/Robot")
     cart_dof_name = "slider_to_cart"
     pole_dof_name = "cart_to_pole"
-
-    # scene
     scene: InteractiveSceneCfg = InteractiveSceneCfg(num_envs=4096, env_spacing=4.0, replicate_physics=True)
-
-    # reset
-    max_cart_pos = 3.0  # the cart is reset if it exceeds that position [m]
-    initial_pole_angle_range = [-0.25, 0.25]  # the range in which the pole angle is sampled from on reset [rad]
-
-    # reward scales
+    max_cart_pos = 3.0
+    initial_pole_angle_range = [-0.25, 0.25]
     rew_scale_alive = 1.0
     rew_scale_terminated = -2.0
     rew_scale_pole_pos = -1.0
     rew_scale_cart_vel = -0.01
     rew_scale_pole_vel = -0.005
-
 
 class CartpoleEnv(DirectRLEnv):
     cfg: CartpoleEnvCfg
@@ -69,16 +48,11 @@ class CartpoleEnv(DirectRLEnv):
 
     def _setup_scene(self):
         self.cartpole = Articulation(self.cfg.robot_cfg)
-        # add ground plane
         spawn_ground_plane(prim_path="/World/ground", cfg=GroundPlaneCfg())
-        # clone and replicate
         self.scene.clone_environments(copy_from_source=False)
-        # we need to explicitly filter collisions for CPU simulation
         if self.device == "cpu":
             self.scene.filter_collisions(global_prim_paths=[])
-        # add articulation to scene
         self.scene.articulations["cartpole"] = self.cartpole
-        # add lights
         light_cfg = sim_utils.DomeLightCfg(intensity=2000.0, color=(0.75, 0.75, 0.75))
         light_cfg.func("/World/Light", light_cfg)
 
